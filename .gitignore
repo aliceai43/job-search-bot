@@ -1,0 +1,38 @@
+# ── 秘密 / 憑證：絕對不要進 git ───────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+/secrets/
+
+# ── 個人資料：履歷、求職需求、履歷編修歷史備份 ────────────────
+/profile/resume.txt
+/profile/preferences.txt
+/profile/history/*
+!/profile/history/.gitkeep
+
+# ── 執行狀態：含職缺歷史、Telegram chat id、履歷對話紀錄 ──────
+/state/*.json
+!/state/.gitkeep
+
+# ── 個人搜尋設定（含 visa_status / 地點）：用 config.example.json 當範本 ──
+/config.json
+!/config.example.json
+
+# ── data_sync.sh 從私有 data repo clone 下來的暫存目錄 ──────
+/_data/
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ── OS / 編輯器 ─────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
