@@ -1,0 +1,54 @@
+name: poll-telegram
+
+on:
+  schedule:
+    # 每 15 分鐘。GitHub 排程在尖峰時可能延遲數分鐘，屬正常現象。
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+# 跟 daily-scan 共用同一個 group，避免兩個 workflow 同時寫 data repo。
+concurrency:
+  group: job-bot-data
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      # 履歷編修對話會用到 claude CLI；純指令 / 上傳履歷用不到。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install -g @anthropic-ai/claude-code
+
+      - name: Pull private data
+        env:
+          DATA_REPO: ${{ vars.DATA_REPO }}
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: bash scripts/data_sync.sh pull
+
+      - name: Process Telegram updates
+        working-directory: scripts
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+        run: python telegram_commands.py
+
+      - name: Push private data
+        if: always()
+        env:
+          DATA_REPO: ${{ vars.DATA_REPO }}
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: bash scripts/data_sync.sh push "poll-telegram"

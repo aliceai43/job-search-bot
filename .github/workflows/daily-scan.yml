@@ -1,0 +1,53 @@
+name: daily-scan
+
+on:
+  schedule:
+    # UTC。雪梨約早上 8~9 點（日光節約時間切換前後會差一小時）。
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+# 跟 poll-telegram 共用同一個 group，避免兩個 workflow 同時寫 data repo。
+concurrency:
+  group: job-bot-data
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install -g @anthropic-ai/claude-code
+
+      - name: Pull private data
+        env:
+          DATA_REPO: ${{ vars.DATA_REPO }}
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: bash scripts/data_sync.sh pull
+
+      - name: Run daily scan
+        working-directory: scripts
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+        run: python job_scraper.py
+
+      - name: Push private data
+        if: always()
+        env:
+          DATA_REPO: ${{ vars.DATA_REPO }}
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: bash scripts/data_sync.sh push "daily-scan"

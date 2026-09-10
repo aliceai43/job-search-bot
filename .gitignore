@@ -1,4 +1,4 @@
-# ── 秘密 / 憑證：絕對不要進 git ───────────────────────────────
+# ── 秘密 / 憑證 ───────────────────────────────
 .env
 .env.*
 !.env.example
@@ -13,6 +13,13 @@
 /profile/history/*
 !/profile/history/.gitkeep
 
+# ── 個人文件檔：避免把測試用的履歷檔不小心 commit 進來 ──────────
+*.pdf
+*.doc
+*.docx
+*.odt
+*.rtf
+
 # ── 執行狀態：含職缺歷史、Telegram chat id、履歷對話紀錄 ──────
 /state/*.json
 !/state/.gitkeep
@@ -24,15 +31,27 @@
 # ── data_sync.sh 從私有 data repo clone 下來的暫存目錄 ──────
 /_data/
 
+# ── Node（claude CLI 建議用 -g 全域安裝，但以防萬一）──────────
+node_modules/
+
 # ── Python ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
 venv/
+env/
 .pytest_cache/
+
+# ── 本機產物 / 暫存 ─────────────────────────────────────────
+*.log
+scratch/
+*.bak
+*.tmp
 
 # ── OS / 編輯器 ─────────────────────────────────────────────
 .DS_Store
 .idea/
 .vscode/
+*.swp
+*~
